@@ -1,15 +1,14 @@
 Running 20s test @ http://app/Cart
   12 threads and 400 connections
   Thread Stats   Avg      Stdev     Max   +/- Stdev
-    Latency     1.32s   174.29ms   1.98s    70.57%
-    Req/Sec    29.50     27.47   180.00     83.23%
+    Latency     1.91s    53.24ms   2.00s    71.81%
+    Req/Sec    23.57     21.45   141.00     74.67%
   Latency Distribution
-     50%    1.31s 
-     75%    1.44s 
-     90%    1.53s 
-     99%    1.71s 
-  5380 requests in 20.09s, 1.11MB read
-  Socket errors: connect 0, read 0, write 0, timeout 389
-  Non-2xx or 3xx responses: 107
-Requests/sec:    267.75
-Transfer/sec:     56.43KB
+     50%    1.91s 
+     75%    1.95s 
+     90%    1.98s 
+     99%    2.00s 
+  2987 requests in 20.09s, 617.32KB read
+  Socket errors: connect 0, read 0, write 0, timeout 2093
+Requests/sec:    148.70
+Transfer/sec:     30.73KB

@@ -1,6 +1,7 @@
 ﻿using app.Entities;
 using app.Models;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -32,8 +33,16 @@ namespace app.Services
         }
         public async Task PostPaymentAsync(Order order)
         {
-            var response = await Client.PostAsJsonAsync("/", order);
-            response.EnsureSuccessStatusCode();
+            try
+            {
+                var response = await Client.PostAsJsonAsync("/", order);
+                if (!response.IsSuccessStatusCode)
+                    logger.LogWarning($"{response.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex.Message, ex);
+            }
         }
     }
 }
