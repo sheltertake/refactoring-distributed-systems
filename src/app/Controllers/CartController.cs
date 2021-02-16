@@ -41,12 +41,16 @@ namespace app.Controllers
         public async Task<ActionResult<Order>> PostAsync(Cart model)
         {
             Interlocked.Increment(ref COUNTER);
+            using var transaction = dbContext.Database.BeginTransaction();
             try
             {
                 var order = await CreateOrderAsync(model);
                 await payService.PostPaymentAsync(order);
                 await mailerService.SendPaymentSuccessEmailAsync(order);
                 await busService.Publish(order);
+
+                transaction.Commit();
+
                 return Created(Request.Path, order);
             }
             catch (Exception ex)

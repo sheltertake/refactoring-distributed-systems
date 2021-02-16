@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -36,7 +37,10 @@ namespace app
             services.AddHttpClient(nameof(BusService), c => c.BaseAddress = options.GetValue<Uri>("BusUrl"));
             services.AddHttpClient(nameof(PayService), c => c.BaseAddress = options.GetValue<Uri>("PayUrl"));
             
-            services.AddScoped(sp => new CartContext(new DbContextOptionsBuilder<CartContext>().UseInMemoryDatabase(databaseName: "test").Options));
+            services.AddScoped(sp => new CartContext(new DbContextOptionsBuilder<CartContext>()
+                                                         .UseInMemoryDatabase(databaseName: "test")
+                                                         .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+                                                         .Options));
             services.AddSingleton<IMailerService, MailerService>();
             services.AddSingleton<IBusService, BusService>();
             services.AddSingleton<IPayService, PayService>();
