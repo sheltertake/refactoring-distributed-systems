@@ -16,8 +16,8 @@ namespace app.Controllers
     [ApiController]
     [Route("[controller]")]
     public class CartController : ControllerBase
-    {
-        private static int COUNTER = 0;
+    {   
+        public static int COUNTER;
         private readonly CartContext dbContext;
         private readonly IMailerService mailerService;
         private readonly IPayService payService;
@@ -35,36 +35,6 @@ namespace app.Controllers
             this.payService = payService;
             this.busService = busService;
             _logger = logger;
-        }
-
-        [HttpGet]
-        public async Task<ActionResult<ReportResponse>> GetAsync()
-        {
-            var orders = await dbContext.Orders.ToListAsync();
-            var payments = await payService.GetAsync();
-            var mails =  await mailerService.GetAsync();
-            var events = await busService.GetAsync();
-            return Ok(new ReportResponse
-            {
-                Counters = new Report
-                {
-                    Orders = orders.Count,
-                    Payments = payments.Count(),
-                    Mails = mails.Count(),
-                    Events = events.Count(),
-
-                },
-                Duplicates = new Report
-                {
-                    Payments = payments.GroupBy(x => x.OrderId).Count(grp => grp.Count() > 1),
-                    Mails = mails.GroupBy(x => x.OrderId).Count(grp => grp.Count() > 1),
-                    Events = events.GroupBy(x => x.OrderId).Count(grp => grp.Count() > 1)
-                },
-                Errors = new Report
-                {
-                    Orders = COUNTER - orders.Count
-                }
-            });
         }
 
         [HttpPost]

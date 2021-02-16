@@ -1,9 +1,13 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using app.Context;
+using app.Controllers;
+using app.Models;
 using app.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,12 +66,48 @@ namespace app
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                endpoints.MapPost("/", context =>
+                endpoints.MapGet("/", async context =>
                 {
-                    context.Response.StatusCode = 200;
-                    return Task.CompletedTask;
-                    //var name = context.Request.RouteValues["name"];
-                    //await context.Response.WriteAsync($"Hello {name}!");
+                    var dbContext = context.RequestServices.GetRequiredService<CartContext>();
+                    var payService = context.RequestServices.GetRequiredService<IPayService>();
+                    var mailerService = context.RequestServices.GetRequiredService<IMailerService>();
+                    var busService = context.RequestServices.GetRequiredService<IBusService>();
+                    var orders = await dbContext.Orders.ToListAsync();
+                    var payments = await payService.GetAsync();
+                    var mails = await mailerService.GetAsync();
+                    var events = await busService.GetAsync();
+                    await context.Response.WriteAsJsonAsync(new ReportResponse
+                    {
+                        Counter = CartController.COUNTER,
+                        Counters = new Report
+                        {
+                            Orders = orders.Count,
+                            Payments = payments.Items.Count(),
+                            Mails = mails.Items.Count(),
+                            Events = events.Items.Count(),
+
+                        },
+                        Duplicates = new Report
+                        {
+                            Payments = payments.Items.GroupBy(x => x.OrderId).Count(grp => grp.Count() > 1),
+                            Mails = mails.Items.GroupBy(x => x.OrderId).Count(grp => grp.Count() > 1),
+                            Events = events.Items.GroupBy(x => x.OrderId).Count(grp => grp.Count() > 1)
+                        },
+                        Errors = new Report
+                        {
+                            Orders = CartController.COUNTER - orders.Count,
+                            Events = events.Errors,
+                            Mails = mails.Errors,
+                            Payments = payments.Errors,
+                        },
+                        Requests = new Report
+                        {
+                            Orders = CartController.COUNTER,
+                            Events = events.Counter,
+                            Mails = mails.Counter,
+                            Payments = payments.Counter,
+                        }
+                    });
                 });
             });
         }

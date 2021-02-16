@@ -1,0 +1,12 @@
+version: "3"
+services:
+    wrk:
+        image: skandyla/wrk
+        container_name: wrk-app
+        networks:
+            - appnet    
+        volumes:
+            - ./wrk:/wrk
+        entrypoint: /wrk/entrypoint.sh /usr/local/bin/wrk -t12 -c400 -d20s --latency -s /wrk/post.lua http://app/Cart
+networks:
+    appnet:   
