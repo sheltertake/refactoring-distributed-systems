@@ -28,21 +28,13 @@ namespace app.Services
 
         public async Task<MockReportResponse> GetAsync()
         {
-            var ret = await Client.GetFromJsonAsync<MockReportResponse>( "/");
+            var ret = await Client.GetFromJsonAsync<MockReportResponse>("/");
             return ret;
         }
         public async Task PostPaymentAsync(Order order)
         {
-            try
-            {
-                var response = await Client.PostAsJsonAsync("/", order);
-                if (!response.IsSuccessStatusCode)
-                    logger.LogWarning($"{response.StatusCode}");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex.Message, ex);
-            }
+            var response = await Client.PostAsJsonAsync("/", order);
+            response.EnsureSuccessStatusCode();
         }
     }
 }
