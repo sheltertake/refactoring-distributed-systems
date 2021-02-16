@@ -41,7 +41,7 @@ namespace app
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "app", Version = "v1" });
             });
 
-            services.AddSingleton(sp => new CartContext(new DbContextOptionsBuilder<CartContext>().UseInMemoryDatabase(databaseName: "test").Options));
+            services.AddScoped(sp => new CartContext(new DbContextOptionsBuilder<CartContext>().UseInMemoryDatabase(databaseName: "test").Options));
             services.AddSingleton<IMailerService, MailerService>();
             services.AddSingleton<IBusService, BusService>();
             services.AddSingleton<IPayService, PayService>();

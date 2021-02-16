@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using app.Context;
@@ -16,7 +17,7 @@ namespace app.Controllers
     [ApiController]
     [Route("[controller]")]
     public class CartController : ControllerBase
-    {   
+    {
         public static int COUNTER;
         private readonly CartContext dbContext;
         private readonly IMailerService mailerService;
@@ -42,11 +43,19 @@ namespace app.Controllers
         public async Task<ActionResult<Order>> PostAsync(Cart model)
         {
             Interlocked.Increment(ref COUNTER);
-            var order = await CreateOrderAsync(model);
-            await payService.PostPaymentAsync(order);
-            await mailerService.SendPaymentSuccessEmailAsync(order);
-            await busService.Publish(order);
-            return Created(Request.Path, order);
+            try
+            {
+                var order = await CreateOrderAsync(model, Request.ca);
+                await payService.PostPaymentAsync(order);
+                await mailerService.SendPaymentSuccessEmailAsync(order);
+                await busService.Publish(order);
+                return Created(Request.Path, order);
+            }
+            catch (Exception ex)
+            {
+                //_logger.LogError(ex, ex.Message);
+                return Problem(title: ex.Message);
+            }
         }
 
         private async Task<Order> CreateOrderAsync(Cart model)
