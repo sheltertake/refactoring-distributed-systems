@@ -17,7 +17,7 @@ services:
             context: ./src/mock
             dockerfile: ./Dockerfile
         environment:
-            MOCK_RANDOM: 0
+            MOCK_RANDOM: 300
         ports:    
             - "5002:80"     
         networks:
@@ -29,7 +29,7 @@ services:
             context: ./src/mock
             dockerfile: ./Dockerfile
         environment:
-            MOCK_RANDOM: 0
+            MOCK_RANDOM: 200
         ports:    
             - "5003:80"     
         networks:
@@ -41,7 +41,7 @@ services:
             context: ./src/mock
             dockerfile: ./Dockerfile
         environment:
-            MOCK_RANDOM: 0
+            MOCK_RANDOM: 100
         ports:    
             - "5004:80"     
         networks:
