@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using app.Context;
 using app.Entities;
-using app.Models;
 using app.Requests;
 using app.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace app.Controllers
@@ -19,6 +16,7 @@ namespace app.Controllers
     public class CartController : ControllerBase
     {
         public static int COUNTER;
+        public static int ERRORS;
         private readonly CartContext dbContext;
         private readonly IMailerService mailerService;
         private readonly IPayService payService;
@@ -45,7 +43,7 @@ namespace app.Controllers
             Interlocked.Increment(ref COUNTER);
             try
             {
-                var order = await CreateOrderAsync(model, Request.ca);
+                var order = await CreateOrderAsync(model);
                 await payService.PostPaymentAsync(order);
                 await mailerService.SendPaymentSuccessEmailAsync(order);
                 await busService.Publish(order);
@@ -53,7 +51,8 @@ namespace app.Controllers
             }
             catch (Exception ex)
             {
-                //_logger.LogError(ex, ex.Message);
+                Interlocked.Increment(ref ERRORS);
+                _logger.LogError(ex, ex.Message);
                 return Problem(title: ex.Message);
             }
         }

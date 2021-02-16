@@ -10,6 +10,7 @@ namespace app.Models
         public Report Duplicates { get; set; }
         public Report Errors { get; set; }
         public Report Requests { get; internal set; }
+        public int CounterErrors { get; internal set; }
     }
     public class Report
     {

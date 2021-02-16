@@ -6,8 +6,7 @@ using System.Threading;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+//using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -17,11 +16,11 @@ namespace mock
     public class Startup
     {
         private static int COUNTER;
-        //private static ConcurrentBag<Order> Orders = new ConcurrentBag<Order>();
-        public void ConfigureServices(IServiceCollection services)
-        {
-            services.AddScoped(sp => new MockContext(new DbContextOptionsBuilder<MockContext>().UseInMemoryDatabase(databaseName: "mock").Options));
-        }
+        private static System.Collections.Concurrent.ConcurrentBag<Order> Orders = new ConcurrentBag<Order>();
+        //public void ConfigureServices(IServiceCollection services)
+        //{
+        //    services.AddScoped(sp => new MockContext(new DbContextOptionsBuilder<MockContext>().UseInMemoryDatabase(databaseName: "mock").Options));
+        //}
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
         {
@@ -47,20 +46,21 @@ namespace mock
                     }
 
                     var body = await JsonSerializer.DeserializeAsync<Order>(context.Request.Body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    var dbContext = context.RequestServices.GetRequiredService<MockContext>();
-                    await dbContext.Orders.AddAsync(new OrderRequest
-                    {
-                        CustomerId = body.CustomerId,
-                        OrderId = body.OrderId,
-                    });
-                    await dbContext.SaveChangesAsync();
-                    //Orders.Add(body);
+                    //var dbContext = context.RequestServices.GetRequiredService<MockContext>();
+                    //await dbContext.Orders.AddAsync(new OrderRequest
+                    //{
+                    //    CustomerId = body.CustomerId,
+                    //    OrderId = body.OrderId,
+                    //});
+                    //await dbContext.SaveChangesAsync();
+                    Orders.Add(body);
                     context.Response.StatusCode = 200;
                 });
                 endpoints.MapGet("/", async context =>
                 {
-                    var dbContext = context.RequestServices.GetRequiredService<MockContext>();
-                    var items = await dbContext.Orders.ToListAsync();
+                    //var dbContext = context.RequestServices.GetRequiredService<MockContext>();
+                    //var items = await dbContext.Orders.ToListAsync();
+                    var items = Orders;
                     await context.Response.WriteAsJsonAsync(new MockReportResponse
                     {
                         Counter = COUNTER,
@@ -72,22 +72,22 @@ namespace mock
         }
     }
 
-    public class MockContext : DbContext
-    {
-        public MockContext(DbContextOptions options) : base(options)
-        {
-        }
-        public virtual DbSet<OrderRequest> Orders { get; set; }
+    //public class MockContext : DbContext
+    //{
+    //    public MockContext(DbContextOptions options) : base(options)
+    //    {
+    //    }
+    //    public virtual DbSet<OrderRequest> Orders { get; set; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<OrderRequest>(entity =>
-            {
-                //entity.HasNoKey();
-                entity.HasKey(x => x.Guid);
-            });
-        }
-    }
+    //    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    //    {
+    //        modelBuilder.Entity<OrderRequest>(entity =>
+    //        {
+    //            //entity.HasNoKey();
+    //            entity.HasKey(x => x.Guid);
+    //        });
+    //    }
+    //}
     public class MockReportResponse
     {
         public int Counter { get; set; }

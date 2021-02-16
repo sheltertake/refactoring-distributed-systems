@@ -36,11 +36,6 @@ namespace app
             services.AddHttpClient(nameof(BusService), c => c.BaseAddress = options.GetValue<Uri>("BusUrl"));
             services.AddHttpClient(nameof(PayService), c => c.BaseAddress = options.GetValue<Uri>("PayUrl"));
             
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "app", Version = "v1" });
-            });
-
             services.AddScoped(sp => new CartContext(new DbContextOptionsBuilder<CartContext>().UseInMemoryDatabase(databaseName: "test").Options));
             services.AddSingleton<IMailerService, MailerService>();
             services.AddSingleton<IBusService, BusService>();
@@ -50,18 +45,9 @@ namespace app
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "app v1"));
-            }
-
-            app.UseHttpsRedirection();
-
+            
             app.UseRouting();
 
-            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
@@ -78,6 +64,7 @@ namespace app
                     var events = await busService.GetAsync();
                     await context.Response.WriteAsJsonAsync(new ReportResponse
                     {
+                        CounterErrors = CartController.ERRORS,
                         Counter = CartController.COUNTER,
                         Counters = new Report
                         {
