@@ -18,7 +18,7 @@ namespace app.Services
         private readonly HttpClient Client;
         private readonly ILogger<BusService> logger;
 
-        public BusService(IHttpClientFactory httpClientFactory, 
+        public BusService(IHttpClientFactory httpClientFactory,
                           ILogger<BusService> logger)
         {
             Client = httpClientFactory.CreateClient(nameof(BusService));
@@ -31,17 +31,9 @@ namespace app.Services
         }
         public async Task Publish(Order order)
         {
-            try
-            {
-                var response = await Client.PostAsJsonAsync("/", order);
-                if(!response.IsSuccessStatusCode)
-                    logger.LogWarning($"{response.StatusCode}");
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex.Message, ex);
-            }
-            
+
+            var response = await Client.PostAsJsonAsync("/", order);
+            response.EnsureSuccessStatusCode();
         }
     }
 }

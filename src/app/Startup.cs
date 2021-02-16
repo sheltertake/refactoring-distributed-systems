@@ -69,6 +69,7 @@ namespace app
                     var payments = await payService.GetAsync();
                     var mails = await mailerService.GetAsync();
                     var events = await busService.GetAsync();
+                    var eventsSent = orders.Count(x => x.IsEventSent);
                     await context.Response.WriteAsJsonAsync(new ReportResponse
                     {
                         CounterErrors = CartController.ERRORS,
@@ -78,14 +79,7 @@ namespace app
                             Orders = orders.Count,
                             Payments = payments.Items.Count(),
                             Mails = mails.Items.Count(),
-                            Events = events.Items.Count(),
-
-                        },
-                        Duplicates = new Report
-                        {
-                            Payments = payments.Items.GroupBy(x => x.OrderId).Count(grp => grp.Count() > 1),
-                            Mails = mails.Items.GroupBy(x => x.OrderId).Count(grp => grp.Count() > 1),
-                            Events = events.Items.GroupBy(x => x.OrderId).Count(grp => grp.Count() > 1)
+                            Events = eventsSent,
                         },
                         Errors = new Report
                         {
