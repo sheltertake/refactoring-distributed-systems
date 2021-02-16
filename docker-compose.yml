@@ -9,7 +9,17 @@ services:
         ports:    
             - "5001:80"     
         networks:
-            - appnet    
+            - appnet   
+    worker:
+        image: worker
+        container_name: worker
+        build:
+            context: ./src/worker
+            dockerfile: ./Dockerfile
+        ports:    
+            - "5005:80" 
+        networks:
+            - appnet        
     bus:
         image: mock
         container_name: mock-bus

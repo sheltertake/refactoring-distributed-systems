@@ -1,5 +1,7 @@
 ﻿using app.Entities;
 using app.Models;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -14,9 +16,13 @@ namespace app.Services
     public class BusService : IBusService
     {
         private readonly HttpClient Client;
-        public BusService(IHttpClientFactory httpClientFactory)
+        private readonly ILogger<BusService> logger;
+
+        public BusService(IHttpClientFactory httpClientFactory,
+                          ILogger<BusService> logger)
         {
             Client = httpClientFactory.CreateClient(nameof(BusService));
+            this.logger = logger;
         }
         public async Task<MockReportResponse> GetAsync()
         {
@@ -25,6 +31,7 @@ namespace app.Services
         }
         public async Task Publish(Order order)
         {
+
             var response = await Client.PostAsJsonAsync("/", order);
             response.EnsureSuccessStatusCode();
         }

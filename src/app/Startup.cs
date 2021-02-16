@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Net.Http;
 using app.Context;
 using app.Controllers;
 using app.Models;
@@ -9,11 +9,11 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
+using Polly;
+using Polly.Extensions.Http;
 
 namespace app
 {
@@ -32,11 +32,18 @@ namespace app
             var options = Configuration.GetSection("AppSettings");
 
             services.AddControllers();
-            services.AddHttpClient(nameof(MailerService), c => c.BaseAddress = options.GetValue<Uri>("MailerUrl"));
+            
             services.AddHttpClient(nameof(BusService), c => c.BaseAddress = options.GetValue<Uri>("BusUrl"));
             services.AddHttpClient(nameof(PayService), c => c.BaseAddress = options.GetValue<Uri>("PayUrl"));
             
-            services.AddScoped(sp => new CartContext(new DbContextOptionsBuilder<CartContext>().UseInMemoryDatabase(databaseName: "test").Options));
+            services.AddHttpClient(nameof(MailerService), c => c.BaseAddress = options.GetValue<Uri>("MailerUrl"))
+                    .SetHandlerLifetime(TimeSpan.FromMinutes(5))  //Set lifetime to five minutes
+                    .AddPolicyHandler(GetRetryPolicy());
+            
+            services.AddScoped(sp => new CartContext(new DbContextOptionsBuilder<CartContext>()
+                                                         .UseInMemoryDatabase(databaseName: "test")
+                                                         .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+                                                         .Options));
             services.AddSingleton<IMailerService, MailerService>();
             services.AddSingleton<IBusService, BusService>();
             services.AddSingleton<IPayService, PayService>();
@@ -62,6 +69,7 @@ namespace app
                     var payments = await payService.GetAsync();
                     var mails = await mailerService.GetAsync();
                     var events = await busService.GetAsync();
+                    var eventsSent = orders.Count(x => x.IsEventSent);
                     await context.Response.WriteAsJsonAsync(new ReportResponse
                     {
                         CounterErrors = CartController.ERRORS,
@@ -71,14 +79,7 @@ namespace app
                             Orders = orders.Count,
                             Payments = payments.Items.Count(),
                             Mails = mails.Items.Count(),
-                            Events = events.Items.Count(),
-
-                        },
-                        Duplicates = new Report
-                        {
-                            Payments = payments.Items.GroupBy(x => x.OrderId).Count(grp => grp.Count() > 1),
-                            Mails = mails.Items.GroupBy(x => x.OrderId).Count(grp => grp.Count() > 1),
-                            Events = events.Items.GroupBy(x => x.OrderId).Count(grp => grp.Count() > 1)
+                            Events = eventsSent,
                         },
                         Errors = new Report
                         {
@@ -97,6 +98,13 @@ namespace app
                     });
                 });
             });
+        }
+        static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+        {
+            return HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.NotFound)
+                .WaitAndRetryAsync(6, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
         }
     }
 }

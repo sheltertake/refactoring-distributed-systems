@@ -20,7 +20,6 @@ namespace app.Controllers
         private readonly CartContext dbContext;
         private readonly IMailerService mailerService;
         private readonly IPayService payService;
-        private readonly IBusService busService;
         private readonly ILogger<CartController> _logger;
 
         public CartController(CartContext dbContext,
@@ -32,7 +31,6 @@ namespace app.Controllers
             this.dbContext = dbContext;
             this.mailerService = mailerService;
             this.payService = payService;
-            this.busService = busService;
             _logger = logger;
         }
 
@@ -41,17 +39,22 @@ namespace app.Controllers
         public async Task<ActionResult<Order>> PostAsync(Cart model)
         {
             Interlocked.Increment(ref COUNTER);
+            
+            var order = await CreateOrderAsync(model);
             try
             {
-                var order = await CreateOrderAsync(model);
                 await payService.PostPaymentAsync(order);
                 await mailerService.SendPaymentSuccessEmailAsync(order);
-                await busService.Publish(order);
+                
                 return Created(Request.Path, order);
             }
             catch (Exception ex)
             {
                 Interlocked.Increment(ref ERRORS);
+
+                dbContext.Orders.Remove(order);
+                await dbContext.SaveChangesAsync();
+
                 _logger.LogError(ex, ex.Message);
                 return Problem(title: ex.Message);
             }
