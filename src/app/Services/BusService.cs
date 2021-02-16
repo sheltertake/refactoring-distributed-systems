@@ -1,12 +1,15 @@
-﻿using app.Events;
+﻿using app.Entities;
+using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 
 namespace app.Services
 {
     public interface IBusService
     {
-        Task Publish(OrderCreatedEvent orderCreatedEvent);
+        Task Publish(Order order);
+        Task<IEnumerable<Order>> GetAsync();
     }
     public class BusService : IBusService
     {
@@ -15,10 +18,14 @@ namespace app.Services
         {
             Client = httpClientFactory.CreateClient(nameof(BusService));
         }
-
-        public async Task Publish(OrderCreatedEvent orderCreatedEvent)
+        public async Task<IEnumerable<Order>> GetAsync()
         {
-            var response = await Client.PostAsJsonAsync("/", orderCreatedEvent);
+            var ret = await Client.GetFromJsonAsync<IEnumerable<Order>>("/");
+            return ret;
+        }
+        public async Task Publish(Order order)
+        {
+            var response = await Client.PostAsJsonAsync("/", order);
             response.EnsureSuccessStatusCode();
         }
     }
